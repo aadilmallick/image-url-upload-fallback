@@ -1,0 +1,4 @@
+import { ProviderType } from "@/core/providers/types";
+/** Chain edits affect delivery immediately. They never delete replicas or invalidate a shortlink. */
+export function validateFallbackChain(next: ProviderType[], connected: Set<ProviderType>) { if (next.length === 0) throw new Error("Configure at least one provider."); if (new Set(next).size !== next.length) throw new Error("A provider can appear only once in the chain."); for (const provider of next) if (!connected.has(provider)) throw new Error(`${provider} is not connected.`); }
+export function providersToRepair(chain: ProviderType[], replicas: Array<{ provider: ProviderType; status: string }>) { return chain.filter((provider) => !replicas.some((replica) => replica.provider === provider && replica.status === "ready")); }
