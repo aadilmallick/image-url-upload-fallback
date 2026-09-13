@@ -1,0 +1,10 @@
+import { createHash } from "node:crypto";
+import { BaseImageProvider } from "./base-provider";
+import { CloudinaryCredentials, cloudinaryCredentialsSchema } from "./credentials";
+import { UploadInput, UploadResult } from "./types";
+export class CloudinaryProvider extends BaseImageProvider<CloudinaryCredentials> {
+  readonly type = "cloudinary" as const;
+  constructor(private readonly credentials: CloudinaryCredentials) { super(); }
+  async validateCredentials(credentials: CloudinaryCredentials) { cloudinaryCredentialsSchema.parse(credentials); const result = await fetch(`https://api.cloudinary.com/v1_1/${credentials.cloudName}/resources/image`, { headers: { Authorization: `Basic ${Buffer.from(`${credentials.apiKey}:${credentials.apiSecret}`).toString("base64")}` }, signal: AbortSignal.timeout(8_000) }); if (!result.ok) throw new Error("Cloudinary credentials could not be validated."); }
+  async upload(input: UploadInput): Promise<UploadResult> { const timestamp = Math.floor(Date.now() / 1_000).toString(); const publicId = [this.credentials.folder, input.objectKey].filter(Boolean).join("/"); const signature = createHash("sha1").update(`overwrite=true&public_id=${publicId}&timestamp=${timestamp}${this.credentials.apiSecret}`).digest("hex"); const form = new FormData(); const bytes = input.bytes.buffer.slice(input.bytes.byteOffset, input.bytes.byteOffset + input.bytes.byteLength) as ArrayBuffer; form.set("file", new Blob([bytes], { type: input.contentType }), "image"); form.set("public_id", publicId); form.set("overwrite", "true"); form.set("timestamp", timestamp); form.set("api_key", this.credentials.apiKey); form.set("signature", signature); const response = await fetch(`https://api.cloudinary.com/v1_1/${this.credentials.cloudName}/image/upload`, { method: "POST", body: form }); const body = await response.json() as { public_id?: string; secure_url?: string; error?: { message?: string } }; if (!response.ok || !body.public_id || !body.secure_url) throw new Error(body.error?.message ?? "Cloudinary upload failed."); return { externalId: body.public_id, publicUrl: body.secure_url }; }
+}
