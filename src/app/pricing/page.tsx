@@ -1,0 +1,2 @@
+import { PricingTable } from "@clerk/nextjs";
+export default function PricingPage() { return <main className="min-h-screen bg-slate-950 px-6 py-16 text-slate-100"><div className="mx-auto max-w-5xl"><p className="text-sm font-medium text-cyan-300">PRICING</p><h1 className="mt-2 text-4xl font-semibold">Reliable image delivery at every scale.</h1><div className="mt-10 rounded-2xl bg-white p-4"><PricingTable for="user" highlightedPlan="image_url_fallback_pro" /></div></div></main>; }

@@ -1,3 +1,4 @@
 import { ImageProvider, ProviderHealth, ProviderType } from "@/core/providers/types";
+import { checkWithCircuit } from "@/core/delivery/health-cache";
 export type Replica = { provider: ProviderType; url: string };
-export class DeliveryResolver { async resolve(chain: ProviderType[], replicas: Replica[], providers: Map<ProviderType, ImageProvider>) { for (const providerType of chain) { const replica = replicas.find((item) => item.provider === providerType); const provider = providers.get(providerType); if (!replica || !provider) continue; const health: ProviderHealth = await provider.check(replica.url); if (health === "healthy") return replica.url; } return null; } }
+export class DeliveryResolver { async resolve(chain: ProviderType[], replicas: Replica[], providers: Map<ProviderType, ImageProvider>) { for (const providerType of chain) { const replica = replicas.find((item) => item.provider === providerType); const provider = providers.get(providerType); if (!replica || !provider) continue; const health: ProviderHealth = await checkWithCircuit(provider, replica.url); if (health === "healthy") return replica.url; } return null; } }
